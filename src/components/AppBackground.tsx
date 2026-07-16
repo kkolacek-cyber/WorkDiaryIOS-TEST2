@@ -1,23 +1,33 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { Colors } from '../theme';
 
 /**
- * Pozadina cijele aplikacije: topli narančasti gradijent + tri meka
- * "bloba" svjetla, da glass kartice imaju što zamutiti.
+ * Pozadina koja "diše": topli gradijent + tri ambijentalna bloba svjetla
+ * koji vrlo sporo lebde i pulsiraju. Dovoljno suptilno da ne odvlači
+ * pažnju, dovoljno živo da glass materijal iznad ima što lomiti.
+ * Uz iOS "Reduce Motion" blobovi miruju.
  */
 export function AppBackground({ children }: { children: React.ReactNode }) {
   return (
     <View style={styles.root}>
       <LinearGradient
         colors={[Colors.bgTop, Colors.bgMid, Colors.bgBottom]}
-        locations={[0, 0.55, 1]}
+        locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
       />
-      <Blob color={Colors.blobOrange} size={460} top={-150} left={-130} strength={0.38} />
-      <Blob color={Colors.blobAmber} size={400} top={230} left={190} strength={0.26} />
-      <Blob color={Colors.blobRust} size={520} top={580} left={-170} strength={0.3} />
+      <DriftingBlob color={Colors.blobOrange} size={460} top={-150} left={-130} strength={0.42} driftX={40} driftY={26} period={9000} />
+      <DriftingBlob color={Colors.blobAmber} size={400} top={210} left={190} strength={0.28} driftX={-32} driftY={38} period={12000} />
+      <DriftingBlob color={Colors.blobRust} size={540} top={560} left={-180} strength={0.34} driftX={28} driftY={-30} period={15000} />
       <View style={styles.content}>{children}</View>
     </View>
   );
@@ -25,28 +35,53 @@ export function AppBackground({ children }: { children: React.ReactNode }) {
 
 const RINGS = 6;
 
-/**
- * expo-linear-gradient nema radijalni gradijent, pa je meki glow
- * složen od nekoliko koncentričnih krugova sve manje neprozirnosti.
- * Jeftino i izgleda kao pravi radial blur.
- */
-function Blob({
+function DriftingBlob({
   color,
   size,
   top,
   left,
   strength,
+  driftX,
+  driftY,
+  period,
 }: {
   color: string;
   size: number;
   top: number;
   left: number;
   strength: number;
+  driftX: number;
+  driftY: number;
+  period: number;
 }) {
+  const reduced = useReducedMotion();
+  const t = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduced) return;
+    t.value = withRepeat(
+      withTiming(1, { duration: period, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true, // yoyo: tamo-natrag, bez skoka
+    );
+  }, [reduced, period, t]);
+
+  const drift = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: t.value * driftX },
+      { translateY: t.value * driftY },
+      { scale: 1 + t.value * 0.08 },
+    ],
+  }));
+
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', top, left, width: size, height: size }}>
+    <Animated.View
+      pointerEvents="none"
+      style={[{ position: 'absolute', top, left, width: size, height: size }, drift]}
+    >
+      {/* Meki radijalni glow složen od koncentričnih krugova */}
       {Array.from({ length: RINGS }).map((_, i) => {
-        const ratio = 1 - i / RINGS; // 1 -> najmanji krug (najjači)
+        const ratio = 1 - i / RINGS;
         const d = size * ratio;
         return (
           <View
@@ -64,7 +99,7 @@ function Blob({
           />
         );
       })}
-    </View>
+    </Animated.View>
   );
 }
 
