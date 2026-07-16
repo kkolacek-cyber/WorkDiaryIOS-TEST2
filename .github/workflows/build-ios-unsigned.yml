@@ -1,0 +1,75 @@
+# Gradi NEPOTPISANI .ipa na GitHubovom macOS runneru (besplatno).
+# Pokreće se ručno: Actions -> "Build unsigned iOS IPA" -> Run workflow.
+# Rezultat se skida kao artifact i potpisuje Sideloadlyjem na Windowsu.
+#
+# NAPOMENA: macOS runneri troše GitHub Actions minute 10x brže od Linuxa.
+# Besplatnih 2000 min/mj = ~200 min macOS-a = ~8-10 buildova mjesečno.
+# Ako je repo PUBLIC, minute su neograničene i besplatne.
+
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Expo prebuild (generira native ios/ projekt)
+        run: npx expo prebuild --platform ios --clean --no-install
+
+      - name: Install CocoaPods
+        working-directory: ios
+        run: pod install --repo-update
+
+      - name: Build (bez potpisivanja)
+        working-directory: ios
+        run: |
+          set -e
+          WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
+          SCHEME="${WORKSPACE%.xcworkspace}"
+          echo "Workspace: $WORKSPACE | Scheme: $SCHEME"
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: Zapakiraj u .ipa
+        run: |
+          set -e
+          PRODUCTS="ios/build/Build/Products/Release-iphoneos"
+          APP=$(find "$PRODUCTS" -maxdepth 1 -name "*.app" | head -n 1)
+          echo "App: $APP"
+          mkdir -p "$PRODUCTS/Payload"
+          cp -R "$APP" "$PRODUCTS/Payload/"
+          cd "$PRODUCTS"
+          zip -qry RadniDnevnik-unsigned.ipa Payload
+          ls -lh RadniDnevnik-unsigned.ipa
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: RadniDnevnik-unsigned-ipa
+          path: ios/build/Build/Products/Release-iphoneos/RadniDnevnik-unsigned.ipa
+          retention-days: 30

@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Radni Dnevnik",
+    "slug": "radni-dnevnik",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "radnidnevnik",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.karlo.radnidnevnik",
+      "infoPlist": {
+        "UIBackgroundModes": [],
+        "CFBundleLocalizations": ["hr", "en"]
+      }
+    },
+    "android": {
+      "package": "com.karlo.radnidnevnik",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "color": "#FB923C"
+        }
+      ],
+      "expo-sqlite"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
