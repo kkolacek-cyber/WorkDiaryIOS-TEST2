@@ -5,6 +5,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppBackground } from '../../src/components/AppBackground';
 import { GlassCard } from '../../src/components/GlassCard';
 import { MiniBarChart } from '../../src/components/MiniBarChart';
 import { getFilledRange, getMonthlyTotals, type MonthTotal } from '../../src/db/entries';
@@ -68,6 +69,7 @@ export default function CalendarScreen() {
   };
 
   return (
+    <AppBackground>
     <ScrollView
       contentContainerStyle={[
         styles.content,
@@ -170,6 +172,7 @@ export default function CalendarScreen() {
         </View>
       </GlassCard>
     </ScrollView>
+    </AppBackground>
   );
 }
 
