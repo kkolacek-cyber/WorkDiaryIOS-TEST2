@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppBackground } from '../../src/components/AppBackground';
 import { GlassCard } from '../../src/components/GlassCard';
 import { WorkTypeChip } from '../../src/components/WorkTypeChip';
 import { deleteEntry, getEntry, saveEntry } from '../../src/db/entries';
@@ -133,6 +134,7 @@ export default function DetailScreen() {
   const hours = parseNumber(hoursText);
 
   return (
+    <AppBackground>
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
       <ScrollView
         contentContainerStyle={[
@@ -264,6 +266,7 @@ export default function DetailScreen() {
         />
       )}
     </KeyboardAvoidingView>
+    </AppBackground>
   );
 }
 
