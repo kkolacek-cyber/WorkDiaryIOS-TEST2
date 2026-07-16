@@ -5,6 +5,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppBackground } from '../../src/components/AppBackground';
 import { GlassCard } from '../../src/components/GlassCard';
 import { StatusBadge } from '../../src/components/StatusBadge';
 import { getFilledRange, getUnpaidEntries, markPaid } from '../../src/db/entries';
@@ -54,7 +55,7 @@ export default function HomeScreen() {
   );
 
   return (
-    <>
+    <AppBackground>
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -98,7 +99,7 @@ export default function HomeScreen() {
       >
         <Ionicons name="add" size={30} color="#fff" />
       </Pressable>
-    </>
+    </AppBackground>
   );
 }
 
