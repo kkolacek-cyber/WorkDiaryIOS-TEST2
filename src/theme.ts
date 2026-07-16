@@ -1,42 +1,38 @@
 /**
- * Narančasta paleta. Dark-first, kao i Android verzija,
- * samo je plavi/ljubičasti gradijent zamijenjen toplim narančastim.
+ * Dizajn tokeni — "Molten Ember" tema.
+ * Dark-first, topla narančasta, Apple Liquid Glass materijali.
  */
 export const Colors = {
-  // Pozadinski gradijent (od vrha prema dnu)
-  bgTop: '#3B1607',
-  bgMid: '#1A0B04',
-  bgBottom: '#080402',
+  // Pozadina (od vrha prema dnu)
+  bgTop: '#331104',
+  bgMid: '#170903',
+  bgBottom: '#070301',
 
-  // Meki "blobovi" iza glass kartica
-  blobOrange: '#F97316',
-  blobAmber: '#F59E0B',
-  blobRust: '#C2410C',
+  // Ambijentalni blobovi svjetla iza glassa
+  blobOrange: '#FF7A1A',
+  blobAmber: '#FFAE42',
+  blobRust: '#B33A05',
 
   // Statusi
-  paid: '#34D399',      // zelena — isplaćeno
-  waiting: '#FCD34D',   // žuta — čeka isplatu
-  neutral: '#8B7365',   // topla siva — nije rađeno
+  paid: '#3DDC97',
+  waiting: '#FFC94A',
+  neutral: '#8F7A6B',
 
-  // Akcent / interakcija
-  accent: '#FB923C',
-  accentDeep: '#EA580C',
+  // Akcent
+  accent: '#FF8A3D',
+  accentDeep: '#E85D04',
 
   // Tekst
-  textPrimary: '#FDF4EC',
-  textSecondary: '#B9A597',
+  textPrimary: '#FFF4EA',
+  textSecondary: '#C2A78F',
 
-  // Glass
   glass: '#FFFFFF',
-  danger: '#F87171',
-
-  // Donji izbornik (namjerno slabo proziran)
-  tabBar: '#251109',
+  danger: '#FF7B6B',
 };
 
 export const Radius = {
-  card: 26,
-  field: 14,
+  card: 28,
+  field: 16,
   pill: 999,
 };
 
@@ -46,7 +42,63 @@ export const Spacing = {
   md: 12,
   lg: 16,
   xl: 20,
+  xxl: 28,
 };
 
 /** rgba helper za bijelu s alfom */
 export const white = (alpha: number) => `rgba(255, 255, 255, ${alpha})`;
+
+/** rgba helper za akcent s alfom */
+export const accentA = (alpha: number) => `rgba(255, 138, 61, ${alpha})`;
+
+/**
+ * Tipografska skala. Naslovi su tijesno rezani (negativan letterSpacing,
+ * kao SF Display), eyebrow natpisi su mali, uppercase i široko razmaknuti —
+ * to je glavni "potpis" tipografije u cijeloj aplikaciji.
+ */
+export const Type = {
+  hero: {
+    fontSize: 34,
+    fontWeight: '800' as const,
+    letterSpacing: -0.8,
+    color: Colors.textPrimary,
+  },
+  bigNumber: {
+    fontSize: 32,
+    fontWeight: '800' as const,
+    letterSpacing: -0.6,
+    fontVariant: ['tabular-nums'] as ('tabular-nums')[],
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '700' as const,
+    letterSpacing: -0.2,
+    color: Colors.textPrimary,
+  },
+  body: {
+    fontSize: 15,
+    fontWeight: '400' as const,
+    color: Colors.textSecondary,
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase' as const,
+    color: Colors.textSecondary,
+  },
+  caption: {
+    fontSize: 12,
+    fontWeight: '500' as const,
+    color: Colors.textSecondary,
+  },
+};
+
+/** Meka narančasta "glow" sjena za istaknute elemente (FAB, Spremi). */
+export const glowShadow = {
+  shadowColor: Colors.accentDeep,
+  shadowOpacity: 0.45,
+  shadowRadius: 18,
+  shadowOffset: { width: 0, height: 8 },
+  elevation: 10,
+};
