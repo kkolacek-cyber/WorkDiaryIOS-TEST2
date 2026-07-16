@@ -1,17 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedPressable } from '../../src/components/AnimatedPressable';
 import { AppBackground } from '../../src/components/AppBackground';
+import { CountUp } from '../../src/components/CountUp';
 import { GlassCard } from '../../src/components/GlassCard';
 import { StatusBadge } from '../../src/components/StatusBadge';
 import { getFilledRange, getUnpaidEntries, markPaid } from '../../src/db/entries';
 import { addDaysIso, formatCurrency, formatDayHeader, formatNumber, todayIso } from '../../src/format';
 import { useSettings } from '../../src/SettingsContext';
-import { Colors, Spacing, white } from '../../src/theme';
+import { Colors, glowShadow, Spacing, Type, white } from '../../src/theme';
 import { statusOf, WORK_TYPE_LABEL, type DayStatus, type WorkEntry } from '../../src/types';
 
 export default function HomeScreen() {
@@ -31,8 +35,6 @@ export default function HomeScreen() {
     setDays(range);
     setWeekTotal(range.reduce((sum, e) => sum + (e.earnings ?? 0), 0));
 
-    // Ukupan dug se računa preko SVIH zapisa, ne samo zadnjih 7 dana —
-    // to je broj koji te zapravo zanima.
     const unpaid = await getUnpaidEntries(db);
     setUnpaidCount(unpaid.length);
     setUnpaidTotal(unpaid.reduce((sum, e) => sum + (e.earnings ?? 0), 0));
@@ -59,7 +61,7 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + Spacing.sm, paddingBottom: insets.bottom + 140 },
+          { paddingTop: insets.top + Spacing.sm, paddingBottom: insets.bottom + 150 },
         ]}
         refreshControl={
           <RefreshControl
@@ -73,37 +75,50 @@ export default function HomeScreen() {
           />
         }
       >
-        <Text style={styles.title}>Radni Dnevnik</Text>
+        <Animated.View entering={FadeInDown.springify().damping(18)}>
+          <Text style={styles.title}>Radni Dnevnik</Text>
+        </Animated.View>
 
-        <SummaryCard weekTotal={weekTotal} unpaidTotal={unpaidTotal} unpaidCount={unpaidCount} />
+        <Animated.View entering={FadeInDown.delay(60).springify().damping(18)}>
+          <HeroCard weekTotal={weekTotal} unpaidTotal={unpaidTotal} unpaidCount={unpaidCount} />
+        </Animated.View>
 
-        {days.map((entry) => (
-          <DayCard
+        {days.map((entry, i) => (
+          <Animated.View
             key={entry.date}
-            entry={entry}
-            onPress={() => router.push(`/dan/${entry.date}`)}
-            onQuickPaid={() => onQuickPaid(entry)}
-          />
+            entering={FadeInDown.delay(120 + i * 55).springify().damping(18)}
+          >
+            <DayCard
+              entry={entry}
+              onPress={() => router.push(`/dan/${entry.date}`)}
+              onQuickPaid={() => onQuickPaid(entry)}
+            />
+          </Animated.View>
         ))}
       </ScrollView>
 
-      <Pressable
+      <AnimatedPressable
+        pressScale={0.9}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           router.push(`/dan/${todayIso()}`);
         }}
-        style={({ pressed }) => [
-          styles.fab,
-          { bottom: insets.bottom + 96, opacity: pressed ? 0.85 : 1 },
-        ]}
+        style={[styles.fabWrap, { bottom: insets.bottom + 104 }]}
       >
-        <Ionicons name="add" size={30} color="#fff" />
-      </Pressable>
+        <LinearGradient
+          colors={[Colors.accent, Colors.accentDeep]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fab}
+        >
+          <Ionicons name="add" size={30} color="#fff" />
+        </LinearGradient>
+      </AnimatedPressable>
     </AppBackground>
   );
 }
 
-function SummaryCard({
+function HeroCard({
   weekTotal,
   unpaidTotal,
   unpaidCount,
@@ -113,20 +128,35 @@ function SummaryCard({
   unpaidCount: number;
 }) {
   return (
-    <GlassCard style={styles.card} tint={0.14}>
-      <View style={styles.summaryRow}>
-        <View>
-          <Text style={styles.caption}>Zarada (7 dana)</Text>
-          <Text style={[styles.bigNumber, { color: Colors.paid }]}>{formatCurrency(weekTotal)}</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.caption}>Duguju ti</Text>
-          <Text style={[styles.bigNumber, { color: unpaidTotal > 0 ? Colors.waiting : Colors.textPrimary }]}>
-            {formatCurrency(unpaidTotal)}
-          </Text>
-          <Text style={styles.caption}>
-            {unpaidCount} {unpaidCount === 1 ? 'dan' : 'dana'} čeka isplatu
-          </Text>
+    <GlassCard tint={0.13}>
+      <View style={styles.hero}>
+        <Text style={Type.eyebrow}>Zarada · zadnjih 7 dana</Text>
+        <CountUp
+          value={weekTotal}
+          format={formatCurrency}
+          style={[Type.bigNumber, { color: Colors.paid, marginTop: 4 }]}
+        />
+
+        <View style={styles.heroDivider} />
+
+        <View style={styles.heroRow}>
+          <View>
+            <Text style={Type.eyebrow}>Duguju ti</Text>
+            <CountUp
+              value={unpaidTotal}
+              format={formatCurrency}
+              style={[
+                Type.bigNumber,
+                { fontSize: 22, marginTop: 2, color: unpaidTotal > 0 ? Colors.waiting : Colors.textPrimary },
+              ]}
+            />
+          </View>
+          <View style={styles.heroCountPill}>
+            <Ionicons name="time-outline" size={13} color={Colors.textSecondary} />
+            <Text style={Type.caption}>
+              {unpaidCount} {unpaidCount === 1 ? 'dan čeka' : 'dana čeka'}
+            </Text>
+          </View>
         </View>
       </View>
     </GlassCard>
@@ -134,9 +164,9 @@ function SummaryCard({
 }
 
 const ICON: Record<DayStatus, { name: keyof typeof Ionicons.glyphMap; color: string }> = {
-  PAID: { name: 'checkmark-circle', color: Colors.paid },
-  WAITING: { name: 'time', color: Colors.waiting },
-  NOT_WORKED: { name: 'remove-circle-outline', color: Colors.neutral },
+  PAID: { name: 'checkmark', color: Colors.paid },
+  WAITING: { name: 'hourglass-outline', color: Colors.waiting },
+  NOT_WORKED: { name: 'moon-outline', color: Colors.neutral },
 };
 
 function DayCard({
@@ -153,19 +183,21 @@ function DayCard({
 
   return (
     <GlassCard
-      style={styles.card}
-      tint={status === 'NOT_WORKED' ? 0.05 : 0.1}
+      tint={status === 'NOT_WORKED' ? 0.045 : 0.1}
       onPress={onPress}
       onLongPress={status === 'WAITING' ? onQuickPaid : undefined}
     >
       <View style={styles.dayRow}>
-        <Ionicons name={icon.name} size={28} color={icon.color} />
+        {/* Glass ikonica statusa */}
+        <View style={[styles.iconChip, { backgroundColor: `${icon.color}1E`, borderColor: `${icon.color}44` }]}>
+          <Ionicons name={icon.name} size={18} color={icon.color} />
+        </View>
 
         <View style={styles.dayMiddle}>
           <Text
             style={[
-              styles.dayTitle,
-              { color: status === 'NOT_WORKED' ? Colors.textSecondary : Colors.textPrimary },
+              Type.title,
+              status === 'NOT_WORKED' && { color: Colors.textSecondary, fontWeight: '600' },
             ]}
           >
             {formatDayHeader(entry.date)}
@@ -173,7 +205,7 @@ function DayCard({
           {entry.worked ? (
             <>
               {!!entry.description && (
-                <Text style={styles.daySub} numberOfLines={1}>
+                <Text style={[Type.body, { marginTop: 2 }]} numberOfLines={1}>
                   {entry.description}
                 </Text>
               )}
@@ -182,7 +214,7 @@ function DayCard({
               )}
             </>
           ) : (
-            <Text style={[styles.daySub, { color: Colors.neutral }]}>Nije rađeno</Text>
+            <Text style={[Type.body, { color: Colors.neutral, marginTop: 2 }]}>Slobodan dan</Text>
           )}
         </View>
 
@@ -190,16 +222,18 @@ function DayCard({
           {entry.earnings !== null && (
             <Text style={styles.amount}>{formatCurrency(entry.earnings)}</Text>
           )}
-          {entry.hours !== null && <Text style={styles.hours}>{formatNumber(entry.hours)} h</Text>}
+          {entry.hours !== null && (
+            <Text style={Type.caption}>{formatNumber(entry.hours)} h</Text>
+          )}
           {status !== 'NOT_WORKED' && <StatusBadge status={status} />}
         </View>
       </View>
 
       {status === 'WAITING' && (
-        <Pressable onPress={onQuickPaid} style={styles.quickPaid}>
+        <AnimatedPressable onPress={onQuickPaid} pressScale={0.98} style={styles.quickPaid}>
           <Ionicons name="cash-outline" size={15} color={Colors.paid} />
           <Text style={styles.quickPaidText}>Označi kao isplaćeno</Text>
-        </Pressable>
+        </AnimatedPressable>
       )}
     </GlassCard>
   );
@@ -207,46 +241,62 @@ function DayCard({
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.md },
-  title: { fontSize: 30, fontWeight: '800', color: Colors.textPrimary, marginVertical: Spacing.sm },
-  card: { width: '100%' },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: Spacing.xl,
+  title: { ...Type.hero, marginVertical: Spacing.sm },
+
+  hero: { padding: Spacing.xl },
+  heroDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: white(0.14),
+    marginVertical: Spacing.lg,
   },
-  caption: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
-  bigNumber: { fontSize: 24, fontWeight: '800', marginTop: 2 },
-  dayRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.lg },
-  dayMiddle: { flex: 1, paddingHorizontal: 14 },
-  dayTitle: { fontSize: 16, fontWeight: '700' },
-  daySub: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
-  typeLabel: { fontSize: 12, color: Colors.accent, fontWeight: '600', marginTop: 4 },
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  heroCountPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: white(0.06),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: white(0.12),
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+
+  dayRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.lg, gap: 12 },
+  iconChip: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayMiddle: { flex: 1 },
+  typeLabel: { fontSize: 12, color: Colors.accent, fontWeight: '700', marginTop: 4, letterSpacing: 0.3 },
   dayRight: { alignItems: 'flex-end', gap: 3 },
-  amount: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  hours: { fontSize: 12, color: Colors.textSecondary },
+  amount: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, fontVariant: ['tabular-nums'] },
+
   quickPaid: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 10,
+    paddingVertical: 11,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: white(0.12),
   },
-  quickPaidText: { color: Colors.paid, fontSize: 13, fontWeight: '600' },
-  fab: {
+  quickPaidText: { color: Colors.paid, fontSize: 13, fontWeight: '700' },
+
+  fabWrap: {
     position: 'absolute',
     right: Spacing.xl,
+    ...glowShadow,
+  },
+  fab: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: Colors.accentDeep,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
   },
 });
