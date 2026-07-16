@@ -1,6 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -8,7 +9,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
@@ -16,7 +16,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedPressable } from '../../src/components/AnimatedPressable';
 import { AppBackground } from '../../src/components/AppBackground';
 import { GlassCard } from '../../src/components/GlassCard';
 import { WorkTypeChip } from '../../src/components/WorkTypeChip';
@@ -32,7 +34,7 @@ import {
   todayIso,
 } from '../../src/format';
 import { useSettings } from '../../src/SettingsContext';
-import { Colors, Radius, Spacing, white } from '../../src/theme';
+import { Colors, glowShadow, Radius, Spacing, Type, white } from '../../src/theme';
 import type { WorkType } from '../../src/types';
 
 export default function DetailScreen() {
@@ -51,6 +53,7 @@ export default function DetailScreen() {
   const [paidDate, setPaidDate] = useState<string | null>(null);
   const [existsInDb, setExistsInDb] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -132,140 +135,167 @@ export default function DetailScreen() {
   };
 
   const hours = parseNumber(hoursText);
+  const inputStyle = (name: string) => [styles.input, focusedField === name && styles.inputFocused];
 
   return (
     <AppBackground>
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: insets.top + Spacing.sm, paddingBottom: insets.bottom + 40 },
-        ]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-            <Ionicons name="chevron-down" size={24} color={Colors.textPrimary} />
-          </Pressable>
-          <Text style={styles.title}>{formatDayHeader(date)}</Text>
-        </View>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: insets.top + Spacing.sm, paddingBottom: insets.bottom + 40 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View entering={FadeInDown.springify().damping(18)} style={styles.header}>
+            <AnimatedPressable pressScale={0.85} onPress={() => router.back()} style={styles.backBtn}>
+              <Ionicons name="chevron-down" size={22} color={Colors.textPrimary} />
+            </AnimatedPressable>
+            <Text style={styles.title}>{formatDayHeader(date)}</Text>
+          </Animated.View>
 
-        <GlassCard style={styles.card}>
-          <View style={styles.switchRow}>
-            <Text style={styles.rowTitle}>{worked ? 'Radilo se' : 'Nije se radilo'}</Text>
-            <Switch
-              value={worked}
-              onValueChange={onToggleWorked}
-              trackColor={{ true: Colors.accentDeep, false: white(0.15) }}
-              thumbColor="#fff"
-            />
-          </View>
-        </GlassCard>
-
-        {worked && (
-          <>
-            <GlassCard style={styles.card}>
-              <View style={styles.section}>
-                <Text style={styles.caption}>Tip posla</Text>
-                <WorkTypeChip selected={workType} onSelect={setWorkType} />
-              </View>
-            </GlassCard>
-
-            <GlassCard style={styles.card}>
-              <View style={styles.section}>
-                <Text style={styles.caption}>Opis rada</Text>
-                <TextInput
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="Što je rađeno…"
-                  placeholderTextColor={Colors.textSecondary}
-                  multiline
-                  style={[styles.input, { minHeight: 90, textAlignVertical: 'top' }]}
+          <Animated.View entering={FadeInDown.delay(50).springify().damping(18)} layout={LinearTransition.springify().damping(18)}>
+            <GlassCard>
+              <View style={styles.switchRow}>
+                <Text style={Type.title}>{worked ? 'Radilo se' : 'Nije se radilo'}</Text>
+                <Switch
+                  value={worked}
+                  onValueChange={onToggleWorked}
+                  trackColor={{ true: Colors.accentDeep, false: white(0.15) }}
+                  thumbColor="#fff"
                 />
               </View>
             </GlassCard>
+          </Animated.View>
 
-            <GlassCard style={styles.card}>
-              <View style={styles.section}>
-                <Text style={styles.caption}>Sati rada</Text>
-                <TextInput
-                  value={hoursText}
-                  onChangeText={onHoursChange}
-                  placeholder="npr. 8"
-                  placeholderTextColor={Colors.textSecondary}
-                  keyboardType="decimal-pad"
-                  style={styles.input}
-                />
-              </View>
-            </GlassCard>
+          {worked && (
+            <Animated.View
+              entering={FadeInDown.springify().damping(17)}
+              exiting={FadeOut.duration(150)}
+              layout={LinearTransition.springify().damping(18)}
+              style={{ gap: Spacing.md }}
+            >
+              <GlassCard>
+                <View style={styles.section}>
+                  <Text style={Type.eyebrow}>Tip posla</Text>
+                  <WorkTypeChip selected={workType} onSelect={setWorkType} />
+                </View>
+              </GlassCard>
 
-            <GlassCard style={styles.card}>
-              <View style={styles.section}>
-                <Text style={styles.caption}>Zarada (€)</Text>
-                <TextInput
-                  value={earningsText}
-                  onChangeText={onEarningsChange}
-                  placeholder="0,00"
-                  placeholderTextColor={Colors.textSecondary}
-                  keyboardType="decimal-pad"
-                  style={styles.input}
-                />
-                {rate > 0 && (
-                  <Text style={styles.hint}>
-                    Satnica {formatCurrency(rate)}/h — sati i zarada se automatski preračunavaju
-                    {hours ? ` (${formatNumber(hours)} h × ${formatCurrency(rate)})` : ''}
-                  </Text>
-                )}
-              </View>
-            </GlassCard>
-
-            <GlassCard style={styles.card}>
-              <View style={styles.section}>
-                <View style={styles.switchRowInner}>
-                  <Text style={styles.rowTitle}>Isplaćeno</Text>
-                  <Switch
-                    value={isPaid}
-                    onValueChange={onTogglePaid}
-                    trackColor={{ true: Colors.paid, false: white(0.15) }}
-                    thumbColor="#fff"
+              <GlassCard>
+                <View style={styles.section}>
+                  <Text style={Type.eyebrow}>Opis rada</Text>
+                  <TextInput
+                    value={description}
+                    onChangeText={setDescription}
+                    onFocus={() => setFocusedField('desc')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="Što je rađeno…"
+                    placeholderTextColor={Colors.textSecondary}
+                    multiline
+                    style={[...inputStyle('desc'), { minHeight: 90, textAlignVertical: 'top' }]}
                   />
                 </View>
-                {isPaid && paidDate && (
-                  <Pressable onPress={() => setShowPicker(true)}>
-                    <Text style={[styles.hint, { color: Colors.paid }]}>
-                      Datum isplate: {formatFullDate(paidDate)} · promijeni
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            </GlassCard>
-          </>
+              </GlassCard>
+
+              <GlassCard>
+                <View style={styles.section}>
+                  <Text style={Type.eyebrow}>Sati rada</Text>
+                  <TextInput
+                    value={hoursText}
+                    onChangeText={onHoursChange}
+                    onFocus={() => setFocusedField('hours')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="npr. 8"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="decimal-pad"
+                    style={inputStyle('hours')}
+                  />
+                </View>
+              </GlassCard>
+
+              <GlassCard>
+                <View style={styles.section}>
+                  <Text style={Type.eyebrow}>Zarada (€)</Text>
+                  <TextInput
+                    value={earningsText}
+                    onChangeText={onEarningsChange}
+                    onFocus={() => setFocusedField('earn')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="0,00"
+                    placeholderTextColor={Colors.textSecondary}
+                    keyboardType="decimal-pad"
+                    style={inputStyle('earn')}
+                  />
+                  {rate > 0 && (
+                    <Animated.View entering={FadeIn}>
+                      <Text style={styles.hint}>
+                        Satnica {formatCurrency(rate)}/h — sati i zarada se automatski preračunavaju
+                        {hours ? ` (${formatNumber(hours)} h × ${formatCurrency(rate)})` : ''}
+                      </Text>
+                    </Animated.View>
+                  )}
+                </View>
+              </GlassCard>
+
+              <GlassCard>
+                <View style={styles.section}>
+                  <View style={styles.switchRowInner}>
+                    <Text style={Type.title}>Isplaćeno</Text>
+                    <Switch
+                      value={isPaid}
+                      onValueChange={onTogglePaid}
+                      trackColor={{ true: Colors.paid, false: white(0.15) }}
+                      thumbColor="#fff"
+                    />
+                  </View>
+                  {isPaid && paidDate && (
+                    <Animated.View entering={FadeIn}>
+                      <AnimatedPressable haptic={false} pressScale={0.98} onPress={() => setShowPicker(true)}>
+                        <Text style={[styles.hint, { color: Colors.paid }]}>
+                          Datum isplate: {formatFullDate(paidDate)} · promijeni
+                        </Text>
+                      </AnimatedPressable>
+                    </Animated.View>
+                  )}
+                </View>
+              </GlassCard>
+            </Animated.View>
+          )}
+
+          <Animated.View layout={LinearTransition.springify().damping(18)} style={{ gap: Spacing.sm }}>
+            <AnimatedPressable pressScale={0.97} onPress={onSave} style={glowShadow}>
+              <LinearGradient
+                colors={[Colors.accent, Colors.accentDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.saveBtn}
+              >
+                <Text style={styles.saveText}>Spremi</Text>
+              </LinearGradient>
+            </AnimatedPressable>
+
+            {existsInDb && (
+              <AnimatedPressable pressScale={0.97} onPress={onDelete} style={styles.deleteBtn}>
+                <Text style={styles.deleteText}>Obriši zapis</Text>
+              </AnimatedPressable>
+            )}
+          </Animated.View>
+        </ScrollView>
+
+        {showPicker && (
+          <DateTimePicker
+            value={toDate(paidDate ?? date)}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            themeVariant="dark"
+            onChange={(_, selected) => {
+              setShowPicker(Platform.OS === 'ios');
+              if (selected) setPaidDate(toIso(selected));
+            }}
+          />
         )}
-
-        <Pressable onPress={onSave} style={({ pressed }) => [styles.saveBtn, { opacity: pressed ? 0.8 : 1 }]}>
-          <Text style={styles.saveText}>Spremi</Text>
-        </Pressable>
-
-        {existsInDb && (
-          <Pressable onPress={onDelete} style={styles.deleteBtn}>
-            <Text style={styles.deleteText}>Obriši zapis</Text>
-          </Pressable>
-        )}
-      </ScrollView>
-
-      {showPicker && (
-        <DateTimePicker
-          value={toDate(paidDate ?? date)}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          themeVariant="dark"
-          onChange={(_, selected) => {
-            setShowPicker(Platform.OS === 'ios');
-            if (selected) setPaidDate(toIso(selected));
-          }}
-        />
-      )}
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
     </AppBackground>
   );
 }
@@ -274,44 +304,49 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.lg, gap: Spacing.md },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: white(0.08),
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    backgroundColor: white(0.07),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: white(0.14),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, flex: 1 },
-  card: { width: '100%' },
+  title: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4, color: Colors.textPrimary, flex: 1 },
+
   section: { padding: Spacing.lg, gap: Spacing.sm },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl,
-    paddingVertical: 14,
+    paddingVertical: 15,
   },
   switchRowInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  rowTitle: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
-  caption: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
+
   input: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: white(0.2),
+    borderWidth: 1,
+    borderColor: white(0.16),
     borderRadius: Radius.field,
+    backgroundColor: white(0.04),
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 13,
     color: Colors.textPrimary,
     fontSize: 16,
   },
-  hint: { fontSize: 12, color: Colors.accent, marginTop: 2 },
+  inputFocused: {
+    borderColor: Colors.accent,
+    backgroundColor: white(0.06),
+  },
+  hint: { fontSize: 12, color: Colors.accent, marginTop: 2, fontWeight: '500' },
+
   saveBtn: {
-    backgroundColor: Colors.accentDeep,
     borderRadius: Radius.field,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: Spacing.xs,
   },
-  saveText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  deleteBtn: { paddingVertical: 14, alignItems: 'center' },
+  saveText: { color: '#fff', fontSize: 17, fontWeight: '800', letterSpacing: -0.2 },
+  deleteBtn: { paddingVertical: 13, alignItems: 'center' },
   deleteText: { color: Colors.danger, fontSize: 15, fontWeight: '600' },
 });
