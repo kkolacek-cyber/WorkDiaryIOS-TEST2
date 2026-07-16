@@ -11,7 +11,8 @@
   "dependencies": {
     "@expo/vector-icons": "*",
     "@react-native-async-storage/async-storage": "^2.1.0",
-    "@react-native-community/datetimepicker": "9.1.0",
+    "@react-native-community/datetimepicker": "^8.3.0",
+    "babel-preset-expo": "*",
     "date-fns": "^4.1.0",
     "expo": "*",
     "expo-blur": "*",
@@ -24,11 +25,11 @@
     "expo-sharing": "*",
     "expo-sqlite": "*",
     "expo-status-bar": "*",
-    "react": "19.2.3",
+    "react": "*",
     "react-native": "*",
-    "react-native-gesture-handler": "~2.32.0",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "4.25.2"
+    "react-native-gesture-handler": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-screens": "*"
   },
   "devDependencies": {
     "@types/react": "*",
