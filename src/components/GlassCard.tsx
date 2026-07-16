@@ -1,12 +1,13 @@
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { AnimatedPressable } from './AnimatedPressable';
 import { Radius, white } from '../theme';
 
 interface Props {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   intensity?: number;
   tint?: number;
   onPress?: () => void;
@@ -14,47 +15,55 @@ interface Props {
 }
 
 /**
- * Glassmorphism kartica. Za razliku od Android verzije (gdje je efekt bio
- * simuliran poluprozirnim gradijentom), ovdje BlurView radi PRAVI zamućeni
- * backdrop — to je nativna iOS mogućnost i izgleda točno kao sistemski
- * "Liquid Glass" materijal.
+ * Liquid Glass kartica, v2:
+ *  - pravi backdrop blur (nativni iOS materijal)
+ *  - gradijentni hairline rub — svjetliji na vrhu, kao da svjetlo pada odozgo
+ *  - "sheen" odsjaj u gornjoj trećini stakla
+ *  - spring utiskivanje na dodir (preko AnimatedPressable)
  */
-export function GlassCard({ children, style, intensity = 28, tint = 0.1, onPress, onLongPress }: Props) {
-  const inner = (
-    <BlurView intensity={intensity} tint="dark" style={[styles.blur, style]}>
-      <View style={[styles.overlay, { backgroundColor: white(tint) }]}>{children}</View>
-    </BlurView>
+export function GlassCard({ children, style, intensity = 32, tint = 0.1, onPress, onLongPress }: Props) {
+  const body = (
+    <LinearGradient
+      colors={[white(0.34), white(0.1), white(0.05)]}
+      start={{ x: 0.2, y: 0 }}
+      end={{ x: 0.8, y: 1 }}
+      style={[styles.border, style]}
+    >
+      <BlurView intensity={intensity} tint="dark" style={styles.blur}>
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: white(tint) }]} />
+        <LinearGradient
+          pointerEvents="none"
+          colors={[white(0.12), white(0)]}
+          style={styles.sheen}
+        />
+        {children}
+      </BlurView>
+    </LinearGradient>
   );
 
-  if (!onPress && !onLongPress) return inner;
+  if (!onPress && !onLongPress) return body;
 
   return (
-    <Pressable
-      onPress={() => {
-        Haptics.selectionAsync();
-        onPress?.();
-      }}
-      onLongPress={
-        onLongPress
-          ? () => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onLongPress();
-            }
-          : undefined
-      }
-      style={({ pressed }) => [{ opacity: pressed ? 0.75 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] }]}
-    >
-      {inner}
-    </Pressable>
+    <AnimatedPressable onPress={onPress} onLongPress={onLongPress}>
+      {body}
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
-  blur: {
+  border: {
     borderRadius: Radius.card,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: white(0.18),
+    padding: StyleSheet.hairlineWidth * 2, // debljina gradijentnog ruba
   },
-  overlay: { flex: 1 },
+  blur: {
+    borderRadius: Radius.card - 1,
+    overflow: 'hidden',
+  },
+  sheen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 56,
+  },
 });
