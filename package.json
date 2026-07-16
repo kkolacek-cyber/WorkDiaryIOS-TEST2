@@ -27,6 +27,7 @@
     "expo-sharing": "*",
     "expo-sqlite": "*",
     "expo-status-bar": "*",
+    "expo-system-ui": "*",
     "react": "*",
     "react-native": "*",
     "react-native-gesture-handler": "*",
