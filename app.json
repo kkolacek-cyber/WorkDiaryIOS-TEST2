@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "scheme": "radnidnevnik",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#1A0B04",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
