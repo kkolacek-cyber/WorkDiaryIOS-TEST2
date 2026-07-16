@@ -13,12 +13,20 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 60
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Select Xcode 16.4
+        # React Native 0.86 zahtijeva Xcode >= 16.1. Ovo je zaključano na
+        # točnu verziju umjesto oslanjanja na "default" runnera, koji se
+        # zna promijeniti i pokvariti build bez ikakve izmjene u repou.
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.4'
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -27,6 +35,10 @@ jobs:
           cache: npm
 
       - name: Install dependencies
+        # --legacy-peer-deps: expo-router povlači web-only pakete (radix-ui, vaul)
+        # čiji peer dependency zahtjev za react/react-dom zna biti nekoliko
+        # patch-verzija ispred onoga što je stvarno instalirano. Ne utječe
+        # na iOS build (ti paketi se koriste samo za expo-router web target).
         run: npm install --legacy-peer-deps
 
       - name: Expo prebuild (generira native ios/ projekt)
