@@ -4,6 +4,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppBackground } from '../../src/components/AppBackground';
 import { GlassCard } from '../../src/components/GlassCard';
 import { exportCsv } from '../../src/csv';
 import { formatNumber, parseNumber } from '../../src/format';
@@ -38,6 +39,7 @@ export default function SettingsScreen() {
   };
 
   return (
+    <AppBackground>
     <ScrollView
       contentContainerStyle={[
         styles.content,
@@ -125,6 +127,7 @@ export default function SettingsScreen() {
 
       <Text style={styles.version}>Radni Dnevnik 1.0.0</Text>
     </ScrollView>
+    </AppBackground>
   );
 }
 
